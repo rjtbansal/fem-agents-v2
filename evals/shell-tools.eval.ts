@@ -1,22 +1,21 @@
-
-
 /**
- * File Tools Selection Evaluation
+ * Shell Tools Selection Evaluation
  *
- * Tests whether the LLM correctly selects file-related tools
- * (readFile, writeFile, listFiles, deleteFile) based on user prompts.
+ * Tests whether the LLM correctly selects the shell command tool
+ * (runCommand) based on user prompts.
  *
  * Categories:
- * - golden: Must select specific expected tools
- * - secondary: Likely selects certain tools, scored on precision/recall
- * - negative: Must NOT select any file tools
+ * - golden: Must select runCommand for explicit shell requests
+ * - secondary: Likely selects runCommand, scored on precision/recall
+ * - negative: Must NOT use shell for non-shell tasks
  */
 
 import { evaluate } from "@lmnr-ai/lmnr";
 import { singleTurnWithMocks } from "./executors";
 import type { EvalData, EvalTarget } from "./types";
-import dataset from "./data/file-tools.json" with { type: "json" };
-import { toolsAvoided, toolsSelected, toolSelectionScore } from "./evaluators.ts";
+import dataset from "./data/shell-tools.json" with { type: "json" };
+import { toolsAvoided, toolSelectionScore, toolsSelected } from "./evaluators.ts";
+
 // Executor that runs single-turn tool selection with mocked tools (no actual execution, just selection)
 const executor = async (data: EvalData) => {
     return singleTurnWithMocks(data);
@@ -44,5 +43,5 @@ evaluate({
     config: {
         projectApiKey: process.env.LMNR_PROJECT_API_KEY || "",
     },
-    groupName: "file-tools-selection",
+    groupName: "shell-tools-selection",
 });

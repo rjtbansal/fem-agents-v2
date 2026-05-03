@@ -54,7 +54,7 @@ export function toolsAvoided(
  * Order matters but tools don't need to be consecutive.
  */
 
-export function toolOrderCorrect(
+export function toolSelectionScore(
   output: MultiTurnResult,
   target: MultiTurnTarget,
 ): number {
