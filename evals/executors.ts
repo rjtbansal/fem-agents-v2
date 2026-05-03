@@ -12,7 +12,7 @@ import { buildMessages } from "./utils.ts";
 
 // Define the available tools and their parameters
 // In a real implementation, these would correspond to actual functions that perform the described actions
-const TOOL_DEFINITIONS: Record<string, { description: string; parameters: z.ZodSchema<any> }> = {
+const TOOL_DEFINITIONS: Record<string, { description: string; parameters: z.ZodObject<z.ZodRawShape> }> = {
   // Example tools for file operations and command execution
   readFile: {
     description: "Read the contents of a file at a given path",
@@ -40,51 +40,53 @@ const TOOL_DEFINITIONS: Record<string, { description: string; parameters: z.ZodS
     }),
   },
   runCommand: {
-    description: "Run a command in the shell",
+    description: "Run a command in the shell and return its output",
     parameters: z.object({
-      command: z.string().describe("The command to run"),
+      command: z.string().describe("The shell command to execute"),
     }),
   },
 }
 
-// Single turn executor that processes the input, generates tool calls, and returns the results
-// In a real implementation, this would also execute the tool calls and return their outputs
-export const singleTurnExecutor = async (data: EvalData) => {
+/**
+ * Single-turn executor with mocked tools.
+ * Uses predefined tool definitions - tools never execute, only selection is tested.
+ */
+export async function singleTurnWithMocks(
+  data: EvalData,
+): Promise<SingleTurnResult> {
   const messages = buildMessages(data);
 
+  // build mocked tools from definitions
   const tools: ToolSet = {};
-  for (const toolName of data.tools) {
+  for (const toolName of data.tools){
     const def = TOOL_DEFINITIONS[toolName];
-    if (def) {
+    if(def) {
       tools[toolName] = tool({
         description: def.description,
-        inputSchema: def.parameters,
+        inputSchema: def.parameters,  
       });
     }
   }
 
-  // Generate text and capture tool calls without executing them
-  // We use the stopWhen condition to stop generation after the first tool call is made
-  const { toolCalls } = await generateText({
-    model: openai(data.config?.model ?? "gpt-5-mini"),
+  const result = await generateText({
+    model: openai(data.config?.model ?? "gpt-4o-mini"),
     messages,
     tools,
-    stopWhen: stepCountIs(1),
-    // temperature is a parameter that controls the randomness of the model's output. A higher temperature will result in more random outputs, while a lower temperature will make the output more deterministic. We can set it based on the config provided in the EvalData, or leave it undefined to use the model's default behavior.
-    temperature: data.config?.temperature ?? undefined,
+    stopWhen: stepCountIs(1), // Only allow the model to take one step (one tool call or final response)
+    temperature: data.config?.temperature ?? undefined, // Use deterministic output for testing
   });
 
-  // Extract the tool calls and their arguments to return in the result
-  const calls = toolCalls.map((call) => ({
-    name: call.toolName,
-    arguments: "args" in call ? call.args : {},
+  // extract tool calls and final response from the result
+  const toolCalls = result.toolCalls.map((call) => ({
+    toolName: call.toolName,
+    args: "args" in call ? call.args : {}, 
   }));
 
-  const toolNames = toolCalls.map((call) => call.toolName); 
-// Return the tool calls and a flag indicating if any tools were called
+  const toolNames = toolCalls.map((call) => call.toolName);
+
   return {
-    toolCalls: calls,
+    toolCalls,
     toolNames,
-    selectedAny: toolNames.length > 0,
-  } 
+    selectedAny: toolNames.length > 0, 
+  };
 }
