@@ -15,13 +15,13 @@ import { buildMessages } from "./utils.ts";
 const TOOL_DEFINITIONS: Record<string, { description: string; parameters: z.ZodObject<z.ZodRawShape> }> = {
   // Example tools for file operations and command execution
   readFile: {
-    description: "Read the contents of a file at a given path",
+    description: "Read the contents of a file at a specified path",
     parameters: z.object({
-      path: z.string().describe("The path to the file to read"),
+      path: z.string().describe("The content to read from the file"),
     }),
   },
   writeFile: {
-    description: "Write content to a file at a given path",
+    description: "Write content to a file at a specified path",
     parameters: z.object({
       path: z.string().describe("The path to the file to write"),
       content: z.string().describe("The content to write to the file"),
